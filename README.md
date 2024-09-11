@@ -50,33 +50,45 @@ pip install clamd==1.0.2 requests==2.32.3
 Simply run `scanforvirus.bat`
 
 
+## Linux
 
+### Installation
 
+1. `sudo apt install clamav clamav-freshclam clamav-daemon apparmor-utils`
+2. Setup configuration with `sudo dpkg-reconfigure clamav-daemon`
+    - `TCP` sockets
+    - Port `3310`
+    - IP address `localhost`
+    - Leave the rest on default
 
-
-
-## Installation as service under Linux
+You need to setup AppArmor to enable ClamAV to access the input files, see https://superuser.com/a/1708640.
+For this run
 
 ```
-sudo apt install -y git python3.11-env ocl-icd-libopencl1 nvidia-cuda-toolkit nvidia-utils-510-server nvidia-utils-535-server
-python3.11 -m venv python-venv
+sudo aa-complain /usr/sbin/clamd
+```
+
+Next run the following commands in the repository folder
+
+```
+python3.12 -m venv python-venv
 source python-venv/bin/activate
-pip install faster-whisper==0.9.0 nvidia_cublas_cu11==11.11.3.6 nvidia_cudnn_cu11==9.4.0.58
+pip install clamd==1.0.2 requests==2.32.3
 ```
 
-Adopt the shell script `translate.sh`to your needs and create SystemD config files (if you want tu run the worker as Linux service).
+Adopt the shell script `scanforvirus.sh` to your needs and create SystemD config files (if you want to run the worker as Linux service).
 
-**/etc/systemd/system/taskworker-transcribe.service**:
+**/etc/systemd/system/taskworker-scanforvirus.service**:
 
 ```
 [Unit]
-Description=Task Worker - Audio Transcriber
+Description=Task Worker - Virus scanner
 
 [Service]
-ExecStart=/taskworker-transcribe/transcribe.sh
+ExecStart=/taskworker-scanforvirus/scanforvirus.sh
 Restart=always
 User=user
-WorkingDirectory=/taskworker-transcribe/
+WorkingDirectory=/taskworker-scanforvirus/
 
 [Install]
 WantedBy=multi-user.target
@@ -85,20 +97,13 @@ WantedBy=multi-user.target
 Finally register and start the services.
 
 ```
-chmod +x ./transcribe.sh
+chmod +x ./scanforvirus.sh
 sudo systemctl daemon-reload
-sudo systemctl enable taskworker-transcribe.service
-sudo systemctl start taskworker-transcribe.service
+sudo systemctl enable taskworker-scanforvirus.service
+sudo systemctl start taskworker-scanforvirus.service
 ```
 
-## Running
-
-Running the program the first time, ai models with about 4 GB (depending on the used model) get downloaded automatically.
-
-```sh
-python transcribe.py --taskbridgeurl http://192.168.178.39:42000/ --device cuda --worker ROG --model large-v2
-```
 
 ## Literature
 
-1. https://github.com/SYSTRAN/faster-whisper
+1. https://www.clamav.net/
